@@ -7,6 +7,8 @@ import { UsersModule } from './users/users.module';
 import { ClinicsModule } from './clinic/clinic.module';
 import { ClinicServicesModule } from './clinic-services/clinic-service.module';
 import { AppointmentsModule } from './appointment/appointment.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksService } from './tasks.service';
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { AppointmentsModule } from './appointment/appointment.module';
       },
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot(),
     AuthenticationModule,
     UsersModule,
     ClinicsModule,
@@ -45,6 +48,6 @@ import { AppointmentsModule } from './appointment/appointment.module';
     AppointmentsModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [TasksService],
 })
 export class AppModule {}

@@ -3,6 +3,7 @@ import { Transform, Type } from 'class-transformer';
 import * as mongoose from 'mongoose';
 import { Document, ObjectId } from 'mongoose';
 import { ClinicService } from 'src/clinic-services/clinic-service.schema';
+import { Clinic } from 'src/clinic/clinic.schema';
 import { User } from 'src/users/user.schema';
 
 export type AppointmentDocument = Appointment & Document;
@@ -57,6 +58,15 @@ export class Appointment {
   @Transform(({ value }) => value.toString())
   patientId: mongoose.Types.ObjectId;
 
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Clinic',
+    required: true,
+    unique: false,
+  })
+  @Transform(({ value }) => value.toString())
+  clinicId: mongoose.Types.ObjectId;
+
   @Type(() => ClinicService)
   service: ClinicService;
 
@@ -65,6 +75,9 @@ export class Appointment {
 
   @Type(() => User)
   patient: User;
+
+  @Type(() => Clinic)
+  clinic: Clinic;
 }
 
 const AppointmentSchema = SchemaFactory.createForClass(Appointment);
@@ -73,18 +86,28 @@ AppointmentSchema.virtual('service', {
   ref: 'ClinicService',
   localField: 'serviceId',
   foreignField: '_id',
+  justOne: true,
+});
+
+AppointmentSchema.virtual('clinic', {
+  ref: 'Clinic',
+  localField: 'clinicId',
+  foreignField: '_id',
+  justOne: true,
 });
 
 AppointmentSchema.virtual('doctor', {
   ref: 'User',
   localField: 'doctorId',
   foreignField: '_id',
+  justOne: true,
 });
 
 AppointmentSchema.virtual('patient', {
   ref: 'User',
   localField: 'patientId',
   foreignField: '_id',
+  justOne: true,
 });
 
 export { AppointmentSchema };

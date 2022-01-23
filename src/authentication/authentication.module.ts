@@ -7,7 +7,6 @@ import { LocalStrategy } from './startegies/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './startegies/jwt.strategy';
-import RoleGuard from '../common/guards/role.guard';
 import JwtAuthenticationGuard from './guards/jwt-authentication.guard';
 import { RolesGuard } from './guards/role.guard';
 

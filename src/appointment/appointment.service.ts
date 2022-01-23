@@ -92,6 +92,27 @@ class AppointmentService {
     return { data, count };
   }
 
+  async getAppointmentsToRemind() {
+    const after23H = moment().add(23, 'hour');
+    const after24H = moment().add(24, 'hour');
+    const filters: mongoose.FilterQuery<AppointmentDocument> = {
+      date: {
+        $gte: moment(after23H).toDate(),
+        $lte: moment(after24H).toDate(),
+      },
+    };
+
+    const findQuery = this.appointmentModel
+      .find(filters)
+      .sort({ date: 1 })
+      .populate('clinic', 'name city streat')
+      .populate('patient', 'email firstName lastName')
+      .setOptions({ lean: true });
+
+    const data = await findQuery;
+    return data;
+  }
+
   async getById(user: User, id: string) {
     const appointment = await this.appointmentModel
       .findById(id)
@@ -206,9 +227,13 @@ class AppointmentService {
         }`,
       );
     }
-
+    appointmentData.date = moment(appointmentData.date)
+      .startOf('day')
+      .add(appointmentData.startsAt, 'minute')
+      .toDate();
     const createdAppointment = new this.appointmentModel({
       ...appointmentData,
+      clinicId: service.clinicId,
       endsAt,
     });
 
