@@ -170,7 +170,7 @@ export class ClinicsService {
         },
         {
           $push: {
-            doctors: doctor._id,
+            doctorIds: doctor._id,
           },
         },
       );
@@ -197,7 +197,7 @@ export class ClinicsService {
     try {
       const { nModified } = await this.clinicModel.updateMany(
         { _id: clinicId },
-        { $pull: { doctors: { $in: doctorId } } },
+        { $pull: { doctorIds: { $in: doctorId } } },
         { session },
       );
 

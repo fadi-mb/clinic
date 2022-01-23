@@ -75,4 +75,16 @@ export default class ClinicsController {
     const user = request.user;
     return this.clinicsService.addDoctor(user, id, doctorData);
   }
+
+  @Delete(':id/doctor/:subId')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ClinicAdmin)
+  async removeDoctor(
+    @Param() { id }: ParamsWithId,
+    @Param() { subId }: SubParamsWithId,
+    @Req() request: RequestWithUser,
+  ) {
+    const user = request.user;
+    return this.clinicsService.removeDoctor(user, id, subId);
+  }
 }
