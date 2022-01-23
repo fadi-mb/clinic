@@ -1,20 +1,19 @@
-import { Optional } from '@nestjs/common';
-import { IsMongoId, IsDate } from 'class-validator';
+import { IsMongoId, IsDate, IsOptional } from 'class-validator';
 
 export class AppointmentFilterDto {
   @IsDate()
-  @Optional()
+  @IsOptional()
   date: Date;
 
   @IsMongoId()
-  @Optional()
+  @IsOptional()
   serviceId: string;
 
   @IsMongoId()
-  @Optional()
+  @IsOptional()
   doctorId: string;
 
   @IsMongoId()
-  @Optional()
+  @IsOptional()
   patientId: string;
 }
