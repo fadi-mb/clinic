@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import * as mongoose from 'mongoose';
 import { Document } from 'mongoose';
+import { Clinic } from 'src/clinic/clinic.schema';
 import { User } from 'src/users/user.schema';
 
 export type ClinicServiceDocument = ClinicService & Document;
@@ -50,6 +51,9 @@ export class ClinicService {
     value.map((e: mongoose.Schema.Types.ObjectId) => e.toString()),
   )
   doctorIds: mongoose.Types.ObjectId[];
+
+  @Type(() => Clinic)
+  clinic: Clinic;
 }
 
 const ClinicServiceSchema = SchemaFactory.createForClass(ClinicService);
@@ -61,6 +65,7 @@ ClinicServiceSchema.virtual('clinic', {
   ref: 'Clinic',
   localField: 'clinicId',
   foreignField: '_id',
+  justOne: true,
 });
 
 ClinicServiceSchema.virtual('doctors', {

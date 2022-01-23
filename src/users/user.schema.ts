@@ -88,6 +88,7 @@ UserSchema.virtual('clinic', {
   ref: 'Clinic',
   localField: 'clinicId',
   foreignField: '_id',
+  justOne: true,
 });
 
 export { UserSchema };

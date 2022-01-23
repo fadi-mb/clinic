@@ -14,7 +14,7 @@ import RequestWithUser from './interfaces/request-with-user.interface';
 import { LocalAuthenticationGuard } from './guards/local-authentication.guard';
 import { User } from '../users/user.schema';
 import MongooseClassSerializerInterceptor from '../utils/mongooseClassSerializer.interceptor';
-import { RolesGuard } from './guards/role.guard';
+import RolesGuard from './guards/role.guard';
 
 @Controller('authentication')
 @UseInterceptors(MongooseClassSerializerInterceptor(User))

@@ -1,9 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import JwtAuthenticationGuard from './jwt-authentication.guard';
 
 @Injectable()
-export class RolesGuard extends JwtAuthenticationGuard {
+export default class RolesGuard extends JwtAuthenticationGuard {
   constructor(private readonly reflector: Reflector) {
     super();
   }

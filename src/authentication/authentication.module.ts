@@ -8,7 +8,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './startegies/jwt.strategy';
 import JwtAuthenticationGuard from './guards/jwt-authentication.guard';
-import { RolesGuard } from './guards/role.guard';
+import RolesGuard from './guards/role.guard';
 
 @Global()
 @Module({

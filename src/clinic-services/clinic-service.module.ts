@@ -11,7 +11,7 @@ import ClinicServicesService from './clinic-service.service';
     MongooseModule.forFeature([
       { name: ClinicService.name, schema: ClinicServiceSchema },
     ]),
-    forwardRef(() => ClinicsModule),
+    ClinicsModule,
     forwardRef(() => UsersModule),
   ],
   providers: [ClinicServicesService],

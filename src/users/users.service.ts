@@ -18,19 +18,13 @@ import { InjectConnection } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import MongoError from 'src/utils/mongoError.enum';
 import Role from 'src/common/emuns/role.enum';
-import { TimeInterval, TimeIntervals } from './dto/time-interval.dto';
+import { TimeInterval } from './dto/time-interval.dto';
 import ListUserFilterDto from './dto/list-user-filter.dto';
-// import ClinicsService from 'src/clinic/clinics.service';
-// import { ClinicServiceDocument } from 'src/clinic-services/clinic-service.schema';
 
 @Injectable()
 class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    // @InjectModel(ClinicsService.name)
-    // private clinicServiceModel: Model<ClinicDocument>,
-    // @InjectModel(Clinic.name)
-    // private clinicModel: Model<ClinicServiceDocument>,
     @InjectConnection() private readonly connection: mongoose.Connection,
   ) {}
 
@@ -49,6 +43,7 @@ class UsersService {
     return user;
   }
   async findAll(
+    user: User,
     userFilter: ListUserFilterDto,
     documentsToSkip = 0,
     limitOfDocuments?: number,
@@ -62,9 +57,8 @@ class UsersService {
           },
         }
       : {};
-
-    if (userFilter.clinicId)
-      filters.clinicId = new mongoose.Types.ObjectId(userFilter.clinicId);
+    filters.role = Role.Doctor;
+    filters.clinicId = user.clinicId;
     if (userFilter.providesServiceId)
       filters.serviceIds = {
         $elemMatch: {
@@ -99,21 +93,6 @@ class UsersService {
     return { data, count };
   }
 
-  // async findAlwl() {
-  //   const user = await this.userModel.find().populate({
-  //     path: 'posts',
-  //     populate: {
-  //       path: 'categories',
-  //     },
-  //   });
-
-  //   if (!user) {
-  //     throw new NotFoundException('User');
-  //   }
-
-  //   return user;
-  // }
-
   async getById(
     currentUser: User | null,
     id: string,
@@ -123,9 +102,6 @@ class UsersService {
       .findById(id)
       .populate({
         path: 'clinic',
-        // populate: {
-        //   path: 'categories',
-        // },
       })
       .session(session);
 
@@ -141,7 +117,10 @@ class UsersService {
           currentUser._id.toString() === id
         )
       )
-        throw new ForbiddenException();
+        throw new ForbiddenException(
+          undefined,
+          'Only respective user, or clinic admin on clinic users are authorized.',
+        );
     }
     return user;
   }
@@ -184,7 +163,10 @@ class UsersService {
         user._id.toString() === currentUser._id.toString() ||
         user.clinicId.toString() !== currentUser.clinicId.toString()
       )
-        throw new ForbiddenException();
+        throw new ForbiddenException(
+          undefined,
+          'Only clinic admin can delete a clinic doctor.',
+        );
 
       await session.commitTransaction();
     } catch (error) {
@@ -209,9 +191,17 @@ class UsersService {
           currentUser.role === Role.ClinicAdmin)
       )
     )
-      throw new ForbiddenException();
+      throw new ForbiddenException(
+        undefined,
+        'Only respective user, or clinic admin on clinic users are authorized.',
+      );
     Object.assign(user, userData);
-    return user.save();
+    return user.save().catch((error) => {
+      if (error?.code === MongoError.DuplicateKey) {
+        throw new ConflictException('User with that email already exists');
+      }
+      throw error;
+    });
   }
 
   async updateShifts(user: User, userId: string, shifts: TimeInterval[]) {
@@ -229,7 +219,10 @@ class UsersService {
         user._id.toString() === userId
       )
     )
-      throw new ForbiddenException();
+      throw new ForbiddenException(
+        'Forbidden to Update Shifts',
+        'only clinic admin or doctor is authorized',
+      );
 
     if (shifts.length > 1) {
       shifts.sort((shift1, shift2) => shift1.startsAt - shift2.startsAt);

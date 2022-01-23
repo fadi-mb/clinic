@@ -1,26 +1,23 @@
 import {
   ConflictException,
   ForbiddenException,
-  HttpException,
-  HttpStatus,
   Injectable,
-  NotFoundException,
+  NotFoundException
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { ClinicDocument, Clinic } from './clinic.schema';
-import CreateClinicDto, { UpdateClinicDto } from './dto/create-clinic.dto';
-import { InjectConnection } from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
-import UsersService from 'src/users/users.service';
-import Role from 'src/common/emuns/role.enum';
-import MongoError from 'src/utils/mongoError.enum';
-import { User } from 'src/users/user.schema';
-import CreateUserDto from 'src/users/dto/create-user.dto';
+import { Model } from 'mongoose';
 import {
   ClinicService,
-  ClinicServiceDocument,
+  ClinicServiceDocument
 } from 'src/clinic-services/clinic-service.schema';
+import Role from 'src/common/emuns/role.enum';
+import CreateUserDto from 'src/users/dto/create-user.dto';
+import { User } from 'src/users/user.schema';
+import UsersService from 'src/users/users.service';
+import MongoError from 'src/utils/mongoError.enum';
+import { Clinic, ClinicDocument } from './clinic.schema';
+import CreateClinicDto, { UpdateClinicDto } from './dto/create-clinic.dto';
 
 @Injectable()
 export class ClinicsService {
@@ -82,7 +79,7 @@ export class ClinicsService {
     }
 
     if (user && clinic.adminId.toString() !== user._id.toString())
-      throw new ForbiddenException();
+      throw new ForbiddenException('Only the clinic admin is authorized.');
     return clinic;
   }
 
@@ -136,7 +133,7 @@ export class ClinicsService {
       if (!clinic) throw new NotFoundException('Clinic');
 
       if (clinic.adminId.toString() !== user._id.toString())
-        throw new ForbiddenException();
+        throw new ForbiddenException('Only the clinic admin is authorized.');
 
       Object.assign(clinic, clinicData);
       await clinic.save({ session });
@@ -178,7 +175,7 @@ export class ClinicsService {
       if (!clinic) throw new NotFoundException('Clinic');
 
       if (clinic.adminId.toString() !== user._id.toString())
-        throw new ForbiddenException();
+        throw new ForbiddenException('Only the clinic admin is authorized.');
 
       await session.commitTransaction();
     } catch (error) {

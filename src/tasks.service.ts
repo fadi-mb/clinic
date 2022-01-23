@@ -1,11 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-// import * as nodemailer from 'nodemailer';
-const nodemailer = require('nodemailer');
-import { google } from 'googleapis';
 import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
+import { google } from 'googleapis';
 import AppointmentService from './appointment/appointment.service';
-import moment from 'moment';
+const nodemailer = require('nodemailer');
 
 @Injectable()
 export class TasksService {

@@ -11,13 +11,13 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { RolesGuard } from 'src/authentication/guards/role.guard';
+import RolesGuard from 'src/authentication/guards/role.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import Role from 'src/common/emuns/role.enum';
 import CreateUserDto from 'src/users/dto/create-user.dto';
 import RequestWithUser from '../authentication/interfaces/request-with-user.interface';
 import MongooseClassSerializerInterceptor from '../utils/mongooseClassSerializer.interceptor';
-import { PaginationParams } from '../utils/paginationParams';
+import PaginationParams from '../utils/paginationParams';
 import ParamsWithId, { SubParamsWithId } from '../utils/paramsWithId';
 import { Clinic } from './clinic.schema';
 import { ClinicsService } from './clinics.service';

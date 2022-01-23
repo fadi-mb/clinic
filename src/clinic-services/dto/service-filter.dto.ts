@@ -1,6 +1,6 @@
 import { IsString, Max, IsMongoId, IsOptional } from 'class-validator';
 
-export class ClinicServiceFilterDto {
+export default class ClinicServiceFilterDto {
   @IsString()
   @IsOptional()
   category: string;

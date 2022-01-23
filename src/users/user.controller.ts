@@ -12,14 +12,14 @@ import {
 import UserService from './users.service';
 import { User } from './user.schema';
 import MongooseClassSerializerInterceptor from '../utils/mongooseClassSerializer.interceptor';
-import { RolesGuard } from '../authentication/guards/role.guard';
+import RolesGuard from '../authentication/guards/role.guard';
 import Role from 'src/common/emuns/role.enum';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UpdateUserDto } from './dto/create-user.dto';
 import ParamsWithId from 'src/utils/paramsWithId';
 import { TimeIntervals } from './dto/time-interval.dto';
 import RequestWithUser from 'src/authentication/interfaces/request-with-user.interface';
-import { PaginationParams } from 'src/utils/paginationParams';
+import PaginationParams from 'src/utils/paginationParams';
 import ListUserFilterDto from './dto/list-user-filter.dto';
 
 @Controller('user')
@@ -28,14 +28,17 @@ import ListUserFilterDto from './dto/list-user-filter.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Roles(Role.ClinicAdmin, Role.Patient)
+  @Roles(Role.ClinicAdmin)
   @Get()
   listUsers(
     @Query() { skip, limit, startId }: PaginationParams,
     @Query() userFilter: ListUserFilterDto,
     @Query('searchQuery') searchQuery: string,
+    @Req() request: RequestWithUser,
   ) {
+    const user = request.user;
     return this.userService.findAll(
+      user,
       userFilter,
       skip,
       limit,
@@ -44,7 +47,6 @@ export class UserController {
     );
   }
 
-  @Roles(Role.ClinicAdmin, Role.Doctor)
   @Get(':id')
   async getById(
     @Param() { id }: ParamsWithId,

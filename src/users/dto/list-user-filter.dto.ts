@@ -25,10 +25,6 @@ export class ListUserFilterDto {
   @IsMongoId()
   @IsOptional()
   providesServiceId: string;
-
-  @IsMongoId()
-  @IsOptional()
-  clinicId: string;
 }
 
 export default ListUserFilterDto;

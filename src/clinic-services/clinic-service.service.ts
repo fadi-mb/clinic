@@ -2,23 +2,20 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  HttpException,
-  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { ClinicServiceDocument, ClinicService } from './clinic-service.schema';
-
-import { InjectConnection } from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
-import MongoError from 'src/utils/mongoError.enum';
-import { CreateClinicServiceDto } from './dto/create-service.dto';
+import { Model } from 'mongoose';
+import { Clinic, ClinicDocument } from 'src/clinic/clinic.schema';
 import { User } from 'src/users/user.schema';
 import UsersService from 'src/users/users.service';
-import { ClinicServiceFilterDto } from './dto/service-filter.dto';
-import { Clinic, ClinicDocument } from 'src/clinic/clinic.schema';
+import MongoError from 'src/utils/mongoError.enum';
+import { ClinicService, ClinicServiceDocument } from './clinic-service.schema';
+import CreateClinicServiceDto from './dto/create-service.dto';
+import ClinicServiceFilterDto from './dto/service-filter.dto';
+import UpdateClinicServiceDto from './dto/update-service.dto';
 
 @Injectable()
 class ClinicServicesService {
@@ -78,14 +75,9 @@ class ClinicServicesService {
   }
 
   async getById(id: string) {
-    const clinicService = await this.clinicServiceModel
-      .findById(id)
-      .populate({
-        path: 'clinic',
-      })
-      .populate({
-        path: 'doctors',
-      });
+    const clinicService = await this.clinicServiceModel.findById(id).populate({
+      path: 'clinic',
+    });
 
     if (!clinicService) {
       throw new NotFoundException('Clinic Service');
@@ -97,7 +89,7 @@ class ClinicServicesService {
     const clinic = await this.clinicModel.findById(clinicServiceData.clinicId);
     if (!clinic) throw new NotFoundException('Clinic');
     if (clinic.adminId.toString() !== user._id.toString())
-      throw new ForbiddenException();
+      throw new ForbiddenException('Only the clinic admin is authorized.');
 
     if (!clinic.serviceCategories.includes(clinicServiceData.category))
       throw new BadRequestException(
@@ -141,7 +133,9 @@ class ClinicServicesService {
       service.clinicId.toString() !== user.clinicId.toString() ||
       doctor.clinicId.toString() !== user.clinicId.toString()
     )
-      throw new ForbiddenException();
+      throw new ForbiddenException(
+        'Only the clinic admin is authorized on clinic services and doctors.',
+      );
 
     if (service.doctorIds.find((id) => id.toString() === doctorId))
       throw new ConflictException('Doctor already assigned to this service');
@@ -183,7 +177,9 @@ class ClinicServicesService {
       service.clinicId.toString() !== user.clinicId.toString() ||
       doctor.clinicId.toString() !== user.clinicId.toString()
     )
-      throw new ForbiddenException();
+      throw new ForbiddenException(
+        'Only the clinic admin is authorized on clinic services and doctors.',
+      );
 
     const idx = service.doctorIds.findIndex((id) => id.toString() === doctorId);
     if (idx < 0)
@@ -221,8 +217,10 @@ class ClinicServicesService {
         throw new NotFoundException('Clinic Service');
       }
 
-      // if (clinicService.clinic.admin._id.toString() !== user._id.toString())
-      //   throw new ForbiddenException();
+      if (clinicService.clinic.adminId.toString() !== user._id.toString())
+        throw new ForbiddenException(
+          'Only the clinic admin is authorized on clinic services .',
+        );
 
       await session.commitTransaction();
     } catch (error) {
@@ -233,18 +231,48 @@ class ClinicServicesService {
     }
   }
 
-  // async update(
-  //   clinicServiceId: string,
-  //   clinicServiceData: UpdateClinicServiceDto,
-  // ) {
-  //   const clinicService = await this.clinicServiceModel
-  //     .findByIdAndUpdate(clinicServiceId, clinicServiceData)
-  //     .setOptions({ overwrite: true, new: true });
-  //   if (!clinicService) {
-  //     throw new NotFoundException();
-  //   }
-  //   return clinicService;
-  // }
+  async update(
+    user: User,
+    clinicServiceId: string,
+    clinicServiceData: UpdateClinicServiceDto,
+  ) {
+    const session = await this.connection.startSession();
+
+    let clinicService;
+
+    session.startTransaction();
+    try {
+      clinicService = await this.clinicServiceModel
+        .findById(clinicServiceId)
+        .populate('clinic')
+        .session(session);
+
+      if (!clinicService) {
+        throw new NotFoundException();
+      }
+
+      if (clinicService.clinic.adminId.toString() !== user._id.toString())
+        throw new ForbiddenException(
+          'Only the clinic admin is authorized on clinic services .',
+        );
+      Object.assign(clinicService, clinicServiceData);
+      await clinicService.save({ session });
+      await session.commitTransaction();
+    } catch (error: any) {
+      await session.abortTransaction();
+
+      if (error?.code === MongoError.DuplicateKey) {
+        throw new ConflictException(
+          `Clinic "${clinicService?.clinic.name}" service with that name already exists`,
+        );
+      }
+      throw error;
+    } finally {
+      session.endSession();
+    }
+
+    return clinicService;
+  }
 }
 
 export default ClinicServicesService;

@@ -10,12 +10,12 @@ import {
   Req,
 } from '@nestjs/common';
 import MongooseClassSerializerInterceptor from '../utils/mongooseClassSerializer.interceptor';
-import { RolesGuard } from '../authentication/guards/role.guard';
+import RolesGuard from '../authentication/guards/role.guard';
 import Role from 'src/common/emuns/role.enum';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import ParamsWithId from 'src/utils/paramsWithId';
 import AppointmentsService from './appointment.service';
-import { PaginationParams } from 'src/utils/paginationParams';
+import PaginationParams from 'src/utils/paginationParams';
 import RequestWithUser from 'src/authentication/interfaces/request-with-user.interface';
 import { Appointment } from './appointment.schema';
 import { CreateAppointmentDto } from './dto/availability.dto';
@@ -54,7 +54,13 @@ export class AppointmentController {
     @Req() request: RequestWithUser,
   ) {
     const user = request.user;
-    return this.appointmentService.findAll(user, filter, skip, limit, startId);
+    return this.appointmentService.listAppointments(
+      user,
+      filter,
+      skip,
+      limit,
+      startId,
+    );
   }
 
   @Get(':id/doctor-availability')

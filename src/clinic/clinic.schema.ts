@@ -70,6 +70,7 @@ ClinicSchema.virtual('admin', {
   ref: 'User',
   localField: 'adminId',
   foreignField: '_id',
+  justOne: true,
 });
 
 export { ClinicSchema };

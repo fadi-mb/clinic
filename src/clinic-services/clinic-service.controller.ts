@@ -9,19 +9,21 @@ import {
   Post,
   Req,
   Patch,
+  Put,
 } from '@nestjs/common';
 import { ClinicService } from './clinic-service.schema';
 import MongooseClassSerializerInterceptor from '../utils/mongooseClassSerializer.interceptor';
-import { RolesGuard } from '../authentication/guards/role.guard';
+import RolesGuard from '../authentication/guards/role.guard';
 import Role from 'src/common/emuns/role.enum';
-import { Roles } from 'src/common/decorators/roles.decorator'; 
+import { Roles } from 'src/common/decorators/roles.decorator';
 import ParamsWithId from 'src/utils/paramsWithId';
 import ClinicServicesService from './clinic-service.service';
-import { PaginationParams } from 'src/utils/paginationParams';
-import { CreateClinicServiceDto } from './dto/create-service.dto';
+import PaginationParams from 'src/utils/paginationParams';
+import UpdateClinicServiceDto from './dto/update-service.dto';
 import RequestWithUser from 'src/authentication/interfaces/request-with-user.interface';
-import { ClinicServiceFilterDto } from './dto/service-filter.dto';
- 
+import ClinicServiceFilterDto from './dto/service-filter.dto';
+import CreateClinicServiceDto from './dto/create-service.dto';
+
 @Controller('service')
 @UseInterceptors(MongooseClassSerializerInterceptor(ClinicService))
 @UseGuards(RolesGuard)
@@ -81,11 +83,14 @@ export class ClinicServiceController {
     );
   }
 
-  // @Put(':id')
-  // async updateClinicService(
-  //   @Param() { id }: ParamsWithId,
-  //   @Body() clinicServiceData: UpdateClinicServiceDto,
-  // ) {
-  //   return this.clinicServiceService.update(id, clinicServiceData);
-  // }
+  @Put(':id')
+  @Roles(Role.ClinicAdmin)
+  async updateClinicService(
+    @Param() { id }: ParamsWithId,
+    @Body() clinicServiceData: UpdateClinicServiceDto,
+    @Req() request: RequestWithUser,
+  ) {
+    const user = request.user;
+    return this.clinicServiceService.update(user, id, clinicServiceData);
+  }
 }

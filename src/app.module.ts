@@ -1,14 +1,14 @@
-import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from '@hapi/joi';
-import { AuthenticationModule } from './authentication/authentication.module';
-import { UsersModule } from './users/users.module';
-import { ClinicsModule } from './clinic/clinic.module';
-import { ClinicServicesModule } from './clinic-services/clinic-service.module';
-import { AppointmentsModule } from './appointment/appointment.module';
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AppointmentsModule } from './appointment/appointment.module';
+import { AuthenticationModule } from './authentication/authentication.module';
+import { ClinicServicesModule } from './clinic-services/clinic-service.module';
+import { ClinicsModule } from './clinic/clinic.module';
 import { TasksService } from './tasks.service';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [

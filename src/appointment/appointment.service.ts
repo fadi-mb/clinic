@@ -32,7 +32,7 @@ class AppointmentService {
     @InjectConnection() private readonly connection: mongoose.Connection,
   ) {}
 
-  async findAll(
+  async listAppointments(
     user: User,
     appointmentFilter: AppointmentFilterDto,
     documentsToSkip = 0,
@@ -79,7 +79,7 @@ class AppointmentService {
 
     const findQuery = this.appointmentModel
       .find(filters)
-      .sort({ _id: 1 })
+      .sort({ date: 1 })
       .skip(documentsToSkip);
 
     if (limitOfDocuments) {
@@ -139,7 +139,9 @@ class AppointmentService {
           appointment.doctor.clinicId.toString() === user.clinicId.toString())
       )
     )
-      throw new ForbiddenException();
+      throw new ForbiddenException(
+        'Only involved (doctor and patient), or clinic admin are authorized.',
+      );
     return appointment;
   }
 
