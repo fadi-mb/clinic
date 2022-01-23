@@ -13,6 +13,8 @@ export type ClinicDocument = Clinic & Document;
     versionKey: false,
     transform: function (doc, ret) {
       delete ret._id;
+      ret.adminId = String(ret.adminId);
+      ret.doctorIds = ret.doctorIds.map((id: any) => String(id));
     },
   },
 })
@@ -44,9 +46,9 @@ export class Clinic {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: User.name }],
   })
   @Transform(({ value }) =>
-    value.map((e: mongoose.Schema.Types.ObjectId) => e.toString()),
+    value.map((e: mongoose.Types.ObjectId) => e.toString()),
   )
-  doctorIds: ObjectId[];
+  doctorIds: mongoose.Types.ObjectId[];
 
   @Prop({
     type: [String],

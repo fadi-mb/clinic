@@ -15,6 +15,10 @@ export type AppointmentDocument = Appointment & Document;
     versionKey: false,
     transform: function (doc, ret) {
       delete ret._id;
+      ret.serviceId = String(ret.serviceId);
+      ret.doctorId = String(ret.doctorId);
+      ret.patientId = String(ret.patientId);
+      ret.clinicId = String(ret.clinicId);
     },
   },
 })

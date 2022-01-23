@@ -6,7 +6,6 @@ import {
   Param,
   Body,
   Put,
-  Patch,
   Req,
   Query,
 } from '@nestjs/common';
@@ -18,7 +17,7 @@ import Role from 'src/common/emuns/role.enum';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UpdateUserDto } from './dto/create-user.dto';
 import ParamsWithId from 'src/utils/paramsWithId';
-import { TimeInterval, TimeIntervals } from './dto/time-interval.dto';
+import { TimeIntervals } from './dto/time-interval.dto';
 import RequestWithUser from 'src/authentication/interfaces/request-with-user.interface';
 import { PaginationParams } from 'src/utils/paginationParams';
 import ListUserFilterDto from './dto/list-user-filter.dto';

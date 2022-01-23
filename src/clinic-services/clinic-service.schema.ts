@@ -1,13 +1,8 @@
-import * as bcrypt from 'bcrypt';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, ObjectId } from 'mongoose';
+import { Transform } from 'class-transformer';
 import * as mongoose from 'mongoose';
-import { Exclude, Transform, Type } from 'class-transformer';
-import Role from '../common/emuns/role.enum';
+import { Document } from 'mongoose';
 import { User } from 'src/users/user.schema';
-import { string } from '@hapi/joi';
-// import { Post } from 'src/posts/post.schema';
-// import { Clinic } from 'src/clinic/clinic.schema';
 
 export type ClinicServiceDocument = ClinicService & Document;
 
@@ -18,6 +13,8 @@ export type ClinicServiceDocument = ClinicService & Document;
     versionKey: false,
     transform: function (doc, ret) {
       delete ret._id;
+      ret.clinicId = String(ret.clinicId);
+      ret.doctorIds = ret.doctorIds.map((id: any) => String(id));
     },
   },
 })
@@ -52,7 +49,7 @@ export class ClinicService {
   @Transform(({ value }) =>
     value.map((e: mongoose.Schema.Types.ObjectId) => e.toString()),
   )
-  doctorIds: ObjectId[];
+  doctorIds: mongoose.Types.ObjectId[];
 }
 
 const ClinicServiceSchema = SchemaFactory.createForClass(ClinicService);

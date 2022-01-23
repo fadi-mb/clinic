@@ -1,19 +1,17 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import SignUpDto from './dto/sign-up.dto';
-import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import MongoError from '../utils/mongoError.enum';
-import UsersService from '../users/users.service';
-import TokenPayload from './interfaces/token-payload.interface';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import Role from 'src/common/emuns/role.enum';
+import UsersService from '../users/users.service';
+import SignUpDto from './dto/sign-up.dto';
+import TokenPayload from './interfaces/token-payload.interface';
 
 @Injectable()
 export class AuthenticationService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
   ) {}
 
   public async register(registrationData: SignUpDto) {

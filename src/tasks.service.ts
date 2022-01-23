@@ -11,6 +11,7 @@ import moment from 'moment';
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
   private oauth2Client;
+
   constructor(
     private readonly configService: ConfigService,
     private readonly appointmentService: AppointmentService,
@@ -45,6 +46,7 @@ export class TasksService {
       refreshToken: this.configService.get('GOOGLE_MAIL_REFRESH_TOKEN'),
       accessToken: accessToken,
     };
+
     const smtpTransport = nodemailer.createTransport({
       service: 'gmail',
       auth,
@@ -85,7 +87,7 @@ export class TasksService {
           this.sendMail(
             appointment.patient.email,
             appointment.patient.firstName + ' ' + appointment.patient.lastName,
-            appointment.clinic.name ?? 'clinic X',
+            appointment.clinic.name,
             `${appointment.clinic.city ?? ''} ${
               appointment.clinic.street ?? ''
             }`,
@@ -94,6 +96,7 @@ export class TasksService {
         });
       });
   }
+
   @Cron('0 0 * * * *')
   handleCron() {
     this.dispatchReminder();

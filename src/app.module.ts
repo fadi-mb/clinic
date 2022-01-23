@@ -21,6 +21,11 @@ import { TasksService } from './tasks.service';
         }),
         MONGO_DATABASE: Joi.string().required(),
         MONGO_HOST: Joi.string().required(),
+        OAUTH_GOOGLE_ID: Joi.string().required(),
+        OAUTH_GOOGLE_SECRET: Joi.string().required(),
+        OAUTH_GOOGLE_REDIRECT_URL: Joi.string().required(),
+        GOOGLE_MAIL_REFRESH_TOKEN: Joi.string().required(),
+        APP_MAIL: Joi.string().required(),
       }),
     }),
     MongooseModule.forRootAsync({

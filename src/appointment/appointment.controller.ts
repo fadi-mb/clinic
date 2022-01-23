@@ -5,11 +5,9 @@ import {
   UseInterceptors,
   Param,
   Body,
-  Put,
   Query,
   Post,
   Req,
-  Patch,
 } from '@nestjs/common';
 import MongooseClassSerializerInterceptor from '../utils/mongooseClassSerializer.interceptor';
 import { RolesGuard } from '../authentication/guards/role.guard';

@@ -5,26 +5,23 @@ import {
   UseInterceptors,
   Param,
   Body,
-  Put,
   Query,
   Post,
   Req,
   Patch,
 } from '@nestjs/common';
-import UserService from './clinic-service.service';
 import { ClinicService } from './clinic-service.schema';
 import MongooseClassSerializerInterceptor from '../utils/mongooseClassSerializer.interceptor';
 import { RolesGuard } from '../authentication/guards/role.guard';
 import Role from 'src/common/emuns/role.enum';
-import { Roles } from 'src/common/decorators/roles.decorator';
-// import { UpdateClinicServiceDto } from './dto/create-service.dto';
+import { Roles } from 'src/common/decorators/roles.decorator'; 
 import ParamsWithId from 'src/utils/paramsWithId';
 import ClinicServicesService from './clinic-service.service';
 import { PaginationParams } from 'src/utils/paginationParams';
 import { CreateClinicServiceDto } from './dto/create-service.dto';
 import RequestWithUser from 'src/authentication/interfaces/request-with-user.interface';
 import { ClinicServiceFilterDto } from './dto/service-filter.dto';
-
+ 
 @Controller('service')
 @UseInterceptors(MongooseClassSerializerInterceptor(ClinicService))
 @UseGuards(RolesGuard)

@@ -1,8 +1,8 @@
 import * as bcrypt from 'bcrypt';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, ObjectId } from 'mongoose';
+import { Document } from 'mongoose';
 import * as mongoose from 'mongoose';
-import { Exclude, Transform, Type } from 'class-transformer';
+import { Exclude, Transform } from 'class-transformer';
 import Role from '../common/emuns/role.enum';
 import { TimeInterval } from './dto/time-interval.dto';
 
@@ -16,6 +16,8 @@ export type UserDocument = User & Document;
     transform: function (doc, ret) {
       delete ret._id;
       delete ret.password;
+      ret.clinicId = String(ret.clinicId);
+      ret.serviceIds = ret.serviceIds.map((id: any) => String(id));
     },
   },
 })
@@ -61,7 +63,7 @@ export class User {
   @Transform(({ value }) =>
     value.map((e: mongoose.Schema.Types.ObjectId) => e.toString()),
   )
-  serviceIds: ObjectId[];
+  serviceIds: mongoose.Types.ObjectId[];
 
   @Prop()
   shifts: TimeInterval[];
