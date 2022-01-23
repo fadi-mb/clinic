@@ -1,31 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-} from '@nestjs/common';
-import { Response } from 'express';
-
-@Catch(HttpException)
-export class MongooseExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
-    const context = host.switchToHttp();
-    const response = context.getResponse<Response>();
-    const request = context.getRequest<Request>();
-    const status = exception.getStatus();
-    console.error(exception);
-    response.status(status).json({
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      stack: exception.stack,
-    });
-  }
-}
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -39,7 +15,16 @@ async function bootstrap() {
       },
     }),
   );
-  // app.useGlobalFilters(new MongooseExceptionFilter());
+
+  const config = new DocumentBuilder()
+    .setTitle('Clinic Test')
+    .setDescription('clinic API description')
+    .setVersion('1.0')
+    .addTag('Clinic')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
   await app.listen(3000);
 }
 bootstrap();

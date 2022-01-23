@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  mongo1:
+    image: mongo:latest
+    container_name: mongo
+    command: ['--replSet', 'my-replica-set', '--bind_ip_all', '--port', '27017']
+    # volumes:
+    #   - ./data/mongo-1:/data/db
+    ports:
+      - 27017:27017
+    healthcheck:
+      test: test $$(echo "rs.initiate({_id:'my-replica-set',members:[{_id:0,host:\"localhost:27017\"}]}).ok || rs.status().ok" | mongo --port 27017 --quiet) -eq 1
+      interval: 10s
+      start_period: 30s
