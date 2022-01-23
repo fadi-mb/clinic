@@ -8,6 +8,7 @@ import {
   Put,
   Patch,
   Req,
+  Query,
 } from '@nestjs/common';
 import UserService from './users.service';
 import { User } from './user.schema';
@@ -19,6 +20,8 @@ import { UpdateUserDto } from './dto/create-user.dto';
 import ParamsWithId from 'src/utils/paramsWithId';
 import { TimeInterval, TimeIntervals } from './dto/time-interval.dto';
 import RequestWithUser from 'src/authentication/interfaces/request-with-user.interface';
+import { PaginationParams } from 'src/utils/paginationParams';
+import ListUserFilterDto from './dto/list-user-filter.dto';
 
 @Controller('user')
 @UseInterceptors(MongooseClassSerializerInterceptor(User))
@@ -28,8 +31,18 @@ export class UserController {
 
   @Roles(Role.ClinicAdmin, Role.Patient)
   @Get()
-  listUsers() {
-    return this.userService.findAll();
+  listUsers(
+    @Query() { skip, limit, startId }: PaginationParams,
+    @Query() userFilter: ListUserFilterDto,
+    @Query('searchQuery') searchQuery: string,
+  ) {
+    return this.userService.findAll(
+      userFilter,
+      skip,
+      limit,
+      startId,
+      searchQuery,
+    );
   }
 
   @Roles(Role.ClinicAdmin, Role.Doctor)
@@ -49,7 +62,7 @@ export class UserController {
     @Req() request: RequestWithUser,
   ) {
     const user = request.user;
-    return this.userService.update(id, userData);
+    return this.userService.update(user, id, userData);
   }
 
   @Roles(Role.ClinicAdmin, Role.Doctor)

@@ -5,8 +5,6 @@ import * as mongoose from 'mongoose';
 import { Exclude, Transform, Type } from 'class-transformer';
 import Role from '../common/emuns/role.enum';
 import { TimeInterval } from './dto/time-interval.dto';
-// import { Post } from 'src/posts/post.schema';
-// import { Clinic } from 'src/clinic/clinic.schema';
 
 export type UserDocument = User & Document;
 
@@ -17,7 +15,7 @@ export type UserDocument = User & Document;
     versionKey: false,
     transform: function (doc, ret) {
       delete ret._id;
-      Object.entries(ret).forEach(([k, v]) => {});
+      delete ret.password;
     },
   },
 })
@@ -43,7 +41,7 @@ export class User {
   fullName: string;
 
   @Prop()
-  @Exclude({ toPlainOnly: true })
+  @Exclude()
   password: string;
 
   @Prop({ enum: Role, required: true, default: Role.Patient })
@@ -56,6 +54,14 @@ export class User {
   })
   @Transform(({ value }) => value.toString())
   clinicId: mongoose.Types.ObjectId;
+
+  @Prop({
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ClinicsService' }],
+  })
+  @Transform(({ value }) =>
+    value.map((e: mongoose.Schema.Types.ObjectId) => e.toString()),
+  )
+  serviceIds: ObjectId[];
 
   @Prop()
   shifts: TimeInterval[];

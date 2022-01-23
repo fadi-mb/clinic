@@ -17,11 +17,17 @@ import Role from 'src/common/emuns/role.enum';
 import MongoError from 'src/utils/mongoError.enum';
 import { User } from 'src/users/user.schema';
 import CreateUserDto from 'src/users/dto/create-user.dto';
+import {
+  ClinicService,
+  ClinicServiceDocument,
+} from 'src/clinic-services/clinic-service.schema';
 
 @Injectable()
 export class ClinicsService {
   constructor(
     @InjectModel(Clinic.name) private clinicModel: Model<ClinicDocument>,
+    @InjectModel(ClinicService.name)
+    private clinicServiceModel: Model<ClinicServiceDocument>,
     private userService: UsersService,
     @InjectConnection() private readonly connection: mongoose.Connection,
   ) {}
@@ -196,7 +202,13 @@ export class ClinicsService {
       );
 
       if (nModified) {
-        await this.userService.delete(doctorId);
+        await this.userService.delete(user, doctorId);
+
+        this.clinicServiceModel.updateMany(
+          {},
+          { $pull: { doctorIds: { $eq: user._id } } },
+          { session },
+        );
       } else throw new NotFoundException('Clinic');
 
       await session.commitTransaction();

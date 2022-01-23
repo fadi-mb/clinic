@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Transform, Type } from 'class-transformer';
 import * as mongoose from 'mongoose';
 import { Document, ObjectId } from 'mongoose';
-import { ClinicService } from 'src/ap/clinic-service.schema';
+import { ClinicService } from 'src/clinic-services/clinic-service.schema';
 import { User } from 'src/users/user.schema';
 
 export type AppointmentDocument = Appointment & Document;
@@ -68,9 +68,6 @@ export class Appointment {
 }
 
 const AppointmentSchema = SchemaFactory.createForClass(Appointment);
-
-AppointmentSchema.index({ name: 'text', description: 'text' });
-AppointmentSchema.index({ name: 1, clinicId: 1 }, { unique: true });
 
 AppointmentSchema.virtual('service', {
   ref: 'ClinicService',

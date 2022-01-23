@@ -20,8 +20,9 @@ import AppointmentsService from './appointment.service';
 import { PaginationParams } from 'src/utils/paginationParams';
 import RequestWithUser from 'src/authentication/interfaces/request-with-user.interface';
 import { Appointment } from './appointment.schema';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { CreateAppointmentDto } from './dto/availability.dto';
 import { AppointmentFilterDto } from './dto/appointment-filter.dto';
+import { DoctorAvailabilityDto } from './dto/create-appointment.dto copy';
 
 @Controller('appointment')
 @UseInterceptors(MongooseClassSerializerInterceptor(Appointment))
@@ -36,7 +37,7 @@ export class AppointmentController {
     @Req() request: RequestWithUser,
   ) {
     const user = request.user;
-    return this.appointmentService.create(user, appointmentData);
+    return this.appointmentService.bookAppointment(user, appointmentData);
   }
 
   @Get(':id')
@@ -56,5 +57,16 @@ export class AppointmentController {
   ) {
     const user = request.user;
     return this.appointmentService.findAll(user, filter, skip, limit, startId);
+  }
+
+  @Get(':id/doctor-availability')
+  async getDoctorAvailability(
+    @Param() { id }: ParamsWithId,
+    @Query() doctorAvailabilityDto: DoctorAvailabilityDto,
+  ) {
+    return this.appointmentService.getDoctorAvailability(
+      id,
+      doctorAvailabilityDto,
+    );
   }
 }

@@ -19,11 +19,18 @@ import * as mongoose from 'mongoose';
 import MongoError from 'src/utils/mongoError.enum';
 import Role from 'src/common/emuns/role.enum';
 import { TimeInterval, TimeIntervals } from './dto/time-interval.dto';
+import ListUserFilterDto from './dto/list-user-filter.dto';
+// import ClinicsService from 'src/clinic/clinics.service';
+// import { ClinicServiceDocument } from 'src/clinic-services/clinic-service.schema';
 
 @Injectable()
 class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    // @InjectModel(ClinicsService.name)
+    // private clinicServiceModel: Model<ClinicDocument>,
+    // @InjectModel(Clinic.name)
+    // private clinicModel: Model<ClinicServiceDocument>,
     @InjectConnection() private readonly connection: mongoose.Connection,
   ) {}
 
@@ -41,21 +48,71 @@ class UsersService {
 
     return user;
   }
+  async findAll(
+    userFilter: ListUserFilterDto,
+    documentsToSkip = 0,
+    limitOfDocuments?: number,
+    startId?: string,
+    searchQuery?: string,
+  ) {
+    const filters: mongoose.FilterQuery<UserDocument> = startId
+      ? {
+          _id: {
+            $gt: startId,
+          },
+        }
+      : {};
 
-  async findAll() {
-    const user = await this.userModel.find().populate({
-      path: 'posts',
-      populate: {
-        path: 'categories',
-      },
-    });
+    if (userFilter.clinicId)
+      filters.clinicId = new mongoose.Types.ObjectId(userFilter.clinicId);
+    if (userFilter.providesServiceId)
+      filters.serviceIds = {
+        $elemMatch: {
+          $eq: new mongoose.Types.ObjectId(userFilter.providesServiceId),
+        },
+      };
 
-    if (!user) {
-      throw new NotFoundException('User');
+    if (userFilter.city) filters.city = userFilter.city;
+    if (userFilter.street) filters.street = userFilter.street;
+    if (userFilter.email) filters.email = userFilter.email;
+    if (userFilter.firstName) filters.firstName = userFilter.firstName;
+    if (userFilter.lastName) filters.lastName = userFilter.lastName;
+
+    if (searchQuery) {
+      filters.$text = {
+        $search: searchQuery,
+      };
     }
 
-    return user;
+    const findQuery = this.userModel
+      .find(filters)
+      .sort({ _id: 1 })
+      .skip(documentsToSkip);
+
+    if (limitOfDocuments) {
+      findQuery.limit(limitOfDocuments);
+    }
+
+    const data = await findQuery;
+    const count = await this.userModel.count();
+
+    return { data, count };
   }
+
+  // async findAlwl() {
+  //   const user = await this.userModel.find().populate({
+  //     path: 'posts',
+  //     populate: {
+  //       path: 'categories',
+  //     },
+  //   });
+
+  //   if (!user) {
+  //     throw new NotFoundException('User');
+  //   }
+
+  //   return user;
+  // }
 
   async getById(
     currentUser: User | null,
@@ -92,9 +149,6 @@ class UsersService {
   async getUserForAuth(id: string) {
     const user = await this.userModel.findById(id).populate({
       path: 'clinic',
-      // populate: {
-      //   path: 'categories',
-      // },
     });
 
     return user;
@@ -114,25 +168,24 @@ class UsersService {
     });
   }
 
-  async delete(userId: string) {
+  async delete(currentUser: User, userId: string) {
     const session = await this.connection.startSession();
 
     session.startTransaction();
     try {
       const user = await this.userModel
         .findByIdAndDelete(userId)
-        // .populate('posts')
         .session(session);
 
       if (!user) {
         throw new NotFoundException('User');
       }
-      // const posts = user.posts;
+      if (
+        user._id.toString() === currentUser._id.toString() ||
+        user.clinicId.toString() !== currentUser.clinicId.toString()
+      )
+        throw new ForbiddenException();
 
-      // await this.postsService.deleteMany(
-      //   posts.map((post) => post._id.toString()),
-      //   session,
-      // );
       await session.commitTransaction();
     } catch (error) {
       await session.abortTransaction();
@@ -142,14 +195,23 @@ class UsersService {
     }
   }
 
-  async update(userId: string, userData: UpdateUserDto) {
-    const user = await this.userModel
-      .findByIdAndUpdate(userId, userData)
-      .setOptions({ overwrite: true, new: true });
+  async update(currentUser: User, userId: string, userData: UpdateUserDto) {
+    const user = await this.userModel.findById(userId);
+
     if (!user) {
       throw new NotFoundException('User');
     }
-    return user;
+
+    if (
+      !(
+        user._id.toString() === currentUser._id.toString() ||
+        (user.clinicId.toString() === currentUser.clinicId.toString() &&
+          currentUser.role === Role.ClinicAdmin)
+      )
+    )
+      throw new ForbiddenException();
+    Object.assign(user, userData);
+    return user.save();
   }
 
   async updateShifts(user: User, userId: string, shifts: TimeInterval[]) {

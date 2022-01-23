@@ -35,7 +35,7 @@ export class ClinicService {
   category: string;
 
   @Prop({ required: true })
-  duration: Number;
+  duration: number;
 
   @Prop({
     type: mongoose.Schema.Types.ObjectId,

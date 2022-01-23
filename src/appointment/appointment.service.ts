@@ -8,14 +8,17 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import { Model } from 'mongoose';
-import { ClinicService } from 'src/ap/clinic-service.schema';
-import { ClinicServiceDocument } from 'src/clinic-services/clinic-service.schema';
+import {
+  ClinicService,
+  ClinicServiceDocument,
+} from 'src/clinic-services/clinic-service.schema';
 import Role from 'src/common/emuns/role.enum';
 import { TimeInterval } from 'src/users/dto/time-interval.dto';
 import { User, UserDocument } from 'src/users/user.schema';
 import { Appointment, AppointmentDocument } from './appointment.schema';
 import { AppointmentFilterDto } from './dto/appointment-filter.dto';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { CreateAppointmentDto } from './dto/availability.dto';
+import { DoctorAvailabilityDto } from './dto/create-appointment.dto copy';
 
 @Injectable()
 class AppointmentService {
@@ -119,7 +122,7 @@ class AppointmentService {
     return appointment;
   }
 
-  async create(user: User, appointmentData: CreateAppointmentDto) {
+  async bookAppointment(user: User, appointmentData: CreateAppointmentDto) {
     const session = await this.connection.startSession();
     session.startTransaction();
 
@@ -175,6 +178,7 @@ class AppointmentService {
       );
     }
 
+    const endsAt: number = appointmentData.startsAt + service.duration;
     const availableIntervals: TimeInterval[] = this.getAvailableIntervals(
       doctor.shifts,
       doctorAppointments,
@@ -183,19 +187,30 @@ class AppointmentService {
     const interval = availableIntervals.find(
       (interval: TimeInterval) =>
         interval.startsAt <= appointmentData.startsAt &&
-        interval.endsAt >= appointmentData.endsAt,
+        interval.endsAt >= endsAt,
     );
 
     if (!interval) {
+      const suggestions = availableIntervals
+        .filter(
+          (interval: TimeInterval) =>
+            interval.endsAt - interval.startsAt >= service.duration,
+        )
+        .map((ti) => `(${ti.startsAt},${ti.endsAt})`);
       throw new PreconditionFailedException(
         'Book A nother time',
-        `available time intervals : ${availableIntervals.map(
-          (ti) => `(${ti.startsAt},${ti.endsAt})`,
-        )}`,
+        `${
+          suggestions.length
+            ? `available time intervals : ${suggestions}`
+            : 'Pick another day.'
+        }`,
       );
     }
 
-    const createdAppointment = new this.appointmentModel(appointmentData);
+    const createdAppointment = new this.appointmentModel({
+      ...appointmentData,
+      endsAt,
+    });
 
     try {
       await createdAppointment.save({ session });
@@ -209,40 +224,86 @@ class AppointmentService {
     return createdAppointment;
   }
 
-  getAvailableIntervals(
-    shifts: TimeInterval[],
-    sameDayAppointments: Appointment[],
-  ): TimeInterval[] {
-    const result: TimeInterval[] = [];
-    const remainingAppointments: Appointment[] = [...sameDayAppointments];
+  async getDoctorAvailability(
+    serviceId: string,
+    doctorAvailabilityDto: DoctorAvailabilityDto,
+  ) {
+    const { doctorId, date } = doctorAvailabilityDto;
+    const [service, doctor, doctorAppointments] = await Promise.all([
+      this.serviceModel.findById(serviceId, undefined),
 
-    shifts.sort((shift1, shift2) => shift1.startsAt - shift2.startsAt);
-    remainingAppointments.sort(
-      (shift1, shift2) => shift1.startsAt - shift2.startsAt,
+      this.userModel.findById(doctorId, undefined),
+      this.appointmentModel.find(
+        {
+          doctorId: new mongoose.Types.ObjectId(doctorId),
+          date: {
+            $gte: moment(date).startOf('day').toDate(),
+            $lte: moment(date).endOf('day').toDate(),
+          },
+        },
+        undefined,
+        {
+          lean: true,
+        },
+      ),
+    ]);
+
+    if (!service) {
+      throw new NotFoundException('Clinic Service');
+    }
+
+    if (!doctor) {
+      throw new NotFoundException('User "doctor"');
+    }
+
+    if (!service.doctorIds.find((id) => id.toString() === doctorId)) {
+      throw new PreconditionFailedException(
+        'Doctor not assigned to that service',
+      );
+    }
+
+    const availableIntervals: TimeInterval[] = this.getAvailableIntervals(
+      doctor.shifts,
+      doctorAppointments,
     );
 
-    for (let shift of shifts) {
-      const intersetion = remainingAppointments.find((appointment) => {
-        appointment.startsAt >= shift.startsAt &&
-          appointment.endsAt <= shift.endsAt;
-      });
+    const suggestions = availableIntervals.filter(
+      (interval: TimeInterval) =>
+        interval.endsAt - interval.startsAt >= service.duration,
+    );
+    return suggestions;
+  }
 
-      if (intersetion) {
-        if (shift.startsAt < intersetion.startsAt) {
+  async filterIntervalsRemoveBooked() {}
+  getAvailableIntervals(
+    availableIntervals: TimeInterval[],
+    bookedIntervals: Appointment[],
+  ): TimeInterval[] {
+    const remainingIntervals: TimeInterval[] = [...availableIntervals];
+
+    for (let booked of bookedIntervals) {
+      const intersetionIdx = remainingIntervals.findIndex(
+        (shift) =>
+          booked.startsAt >= shift.startsAt && booked.endsAt <= shift.endsAt,
+      );
+
+      if (intersetionIdx > -1) {
+        const [avIntersetion] = remainingIntervals.splice(intersetionIdx, 1);
+        if (avIntersetion.startsAt < booked.startsAt) {
           const interval = new TimeInterval();
-          interval.startsAt = shift.startsAt;
-          interval.endsAt = intersetion.startsAt;
-          result.push(interval);
+          interval.startsAt = avIntersetion.startsAt;
+          interval.endsAt = booked.startsAt;
+          remainingIntervals.push(interval);
         }
-        if (shift.endsAt > intersetion.endsAt) {
+        if (avIntersetion.endsAt > booked.endsAt) {
           const interval = new TimeInterval();
-          interval.startsAt = intersetion.endsAt;
-          interval.endsAt = shift.endsAt;
-          result.push(interval);
+          interval.startsAt = booked.endsAt;
+          interval.endsAt = avIntersetion.endsAt;
+          remainingIntervals.push(interval);
         }
-      } else result.push(shift);
+      }
     }
-    return result;
+    return remainingIntervals;
   }
 }
 

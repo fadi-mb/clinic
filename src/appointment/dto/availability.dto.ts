@@ -1,16 +1,11 @@
 import { IsInt, Min, Max, IsMongoId, IsDate } from 'class-validator';
 import { TimeInterval } from 'src/users/dto/time-interval.dto';
 
-export class CreateAppointmentDto extends TimeInterval {
-  // @IsInt()
-  // @Min(0)
-  // @Max(1440)
-  // startsAt: number;
-
-  // @IsInt()
-  // @Min(0)
-  // @Max(1440)
-  // endsAt: number;
+export class CreateAppointmentDto {
+  @IsInt()
+  @Min(0)
+  @Max(1440)
+  startsAt: number;
 
   @IsDate()
   date: Date;

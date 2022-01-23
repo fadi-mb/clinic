@@ -6,5 +6,10 @@ export class ClinicServiceFilterDto {
   category: string;
 
   @IsMongoId()
+  @IsOptional()
   clinicId: string;
+
+  @IsMongoId()
+  @IsOptional()
+  doctorId: string;
 }

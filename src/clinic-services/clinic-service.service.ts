@@ -14,19 +14,19 @@ import { ClinicServiceDocument, ClinicService } from './clinic-service.schema';
 import { InjectConnection } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import MongoError from 'src/utils/mongoError.enum';
-import Role from 'src/common/emuns/role.enum';
-import ClinicsService from 'src/clinic/clinics.service';
 import { CreateClinicServiceDto } from './dto/create-service.dto';
 import { User } from 'src/users/user.schema';
 import UsersService from 'src/users/users.service';
 import { ClinicServiceFilterDto } from './dto/service-filter.dto';
+import { Clinic, ClinicDocument } from 'src/clinic/clinic.schema';
 
 @Injectable()
 class ClinicServicesService {
   constructor(
     @InjectModel(ClinicService.name)
     private clinicServiceModel: Model<ClinicServiceDocument>,
-    private readonly clinicsService: ClinicsService,
+    @InjectModel(Clinic.name)
+    private clinicModel: Model<ClinicDocument>,
     private readonly usersService: UsersService,
     @InjectConnection() private readonly connection: mongoose.Connection,
   ) {}
@@ -48,6 +48,12 @@ class ClinicServicesService {
 
     if (serviceFilter.clinicId)
       filters.clinicId = new mongoose.Types.ObjectId(serviceFilter.clinicId);
+    if (serviceFilter.doctorId)
+      filters.doctorIds = {
+        $elemMatch: {
+          $eq: new mongoose.Types.ObjectId(serviceFilter.doctorId),
+        },
+      };
     if (serviceFilter.category) filters.category = serviceFilter.category;
 
     if (searchQuery) {
@@ -88,10 +94,8 @@ class ClinicServicesService {
   }
 
   async create(user: User, clinicServiceData: CreateClinicServiceDto) {
-    const clinic = await this.clinicsService.getById(
-      undefined,
-      clinicServiceData.clinicId,
-    );
+    const clinic = await this.clinicModel.findById(clinicServiceData.clinicId);
+    if (!clinic) throw new NotFoundException('Clinic');
     if (clinic.adminId.toString() !== user._id.toString())
       throw new ForbiddenException();
 
@@ -144,7 +148,9 @@ class ClinicServicesService {
 
     try {
       service.doctorIds.push(doctor._id);
+      doctor.serviceIds.push(service._id);
       await service.save({ session });
+      await doctor.save({ session });
       await session.commitTransaction();
     } catch (error) {
       await session.abortTransaction();
@@ -185,7 +191,12 @@ class ClinicServicesService {
 
     try {
       service.doctorIds.splice(idx, 1);
+      const serviceIdx = doctor.serviceIds.findIndex(
+        (id) => id.toString() === serviceId,
+      );
+      if (idx > -1) doctor.serviceIds.splice(serviceIdx, 1);
       await service.save({ session });
+      await doctor.save({ session });
       await session.commitTransaction();
     } catch (error) {
       await session.abortTransaction();
